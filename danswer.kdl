@@ -1,0 +1,51 @@
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="zellij:compact-bar"
+        }
+    }
+    tab name="danswer" focus=true
+    tab name="compose" split_direction="vertical" {
+        pane {
+            name "postgres"
+            command "docker-compose"
+            args "-f" "deployment/docker_compose/docker-compose.dev.yml" "up" "relational_db"
+        }
+        pane {
+            name "vespa"
+            command "docker-compose"
+            args "-f" "deployment/docker_compose/docker-compose.dev.yml" "up" "index"
+        }
+    }
+    tab name="services" split_direction="vertical" {
+        pane split_direction="horizontal" {
+            pane {
+                name "web"
+                cwd "web"
+                command "npm"
+                args "run" "dev"
+            }
+            pane {
+                name "model-server"
+                cwd "backend"
+                command "uvicorn"
+                args "model_server.main:app" "--reload" "--port" "9000"
+            }
+        }
+        pane split_direction="horizontal" {
+            pane {
+                name "api"
+                cwd "backend";
+                command "env"
+                args "AUTH_TYPE=disabled" "uvicorn" "danswer.main:app" "--reload" "--port" "8080"
+            }
+            pane {
+                name "jobs"
+                cwd "backend"
+                command "python"
+                args "scripts/dev_run_background_jobs.py"
+            }
+        }
+    }
+}
